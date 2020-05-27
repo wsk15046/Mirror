@@ -67,7 +67,6 @@ namespace Mirror
 
         void Start()
         {
-            Debug.LogWarning($"NetworkAnimator:Awake {animator}");
             // store the animator parameters in a variable - the "Animator.parameters" getter allocates
             // a new parameter array every time it is accessed so we should avoid doing it in a loop
             parameters = animator.parameters
