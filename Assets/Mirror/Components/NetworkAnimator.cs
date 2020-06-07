@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -27,10 +28,10 @@ namespace Mirror
         /// <summary>
         /// The animator component to synchronize.
         /// </summary>
-        [FormerlySerializedAs("m_Animator")]
+        [FormerlySerializedAs("animator")]
         [Header("Animator")]
         [Tooltip("Animator that will have parameters synchronized")]
-        public Animator animator;
+        [SerializeField] Animator _animator = null;
 
         // Note: not an object[] array because otherwise initialization is real annoying
         int[] lastIntParameters;
@@ -65,8 +66,40 @@ namespace Mirror
             }
         }
 
+        public Animator animator
+        {
+            get => _animator;
+            set
+            {
+                if (HasAnimator)
+                {
+                    logger.LogError("setting animator when one has already been set");
+                    return;
+                }
+
+                _animator = value;
+                Setup();
+            }
+        }
+
+        public bool HasAnimator => _animator != null;
+        bool hasSetup;
+        // cache message if Animator not set
+        byte[] setupMsg;
+
         void Awake()
         {
+            // if animator is set in inspector set up automatically 
+            if (HasAnimator)
+            {
+                Setup();
+            }
+        }
+
+        void Setup()
+        {
+            logger.Assert(animator.enabled, "Setup called when animator was disabled");
+
             // store the animator parameters in a variable - the "Animator.parameters" getter allocates
             // a new parameter array every time it is accessed so we should avoid doing it in a loop
             parameters = animator.parameters
@@ -78,11 +111,23 @@ namespace Mirror
 
             animationHash = new int[animator.layerCount];
             transitionHash = new int[animator.layerCount];
+
+            if (isServer)
+            {
+                SendSetupMessage();
+            }
+            // if server has already sent setup message
+            else if (setupMsg != null)
+            {
+                HandleAnimSetMsgBytes(new ArraySegment<byte>(setupMsg));
+                // clear setup message after setup
+                setupMsg = null;
+            }
         }
 
         void FixedUpdate()
         {
-            if (!SendMessagesAllowed)
+            if (!hasSetup || !SendMessagesAllowed)
                 return;
 
             if (!animator.enabled)
@@ -109,6 +154,8 @@ namespace Mirror
 
         bool CheckAnimStateChanged(out int stateHash, out float normalizedTime, int layerId)
         {
+            logger.Assert(HasAnimator, "CheckAnimStateChanged called before animator set");
+
             stateHash = 0;
             normalizedTime = 0;
 
@@ -184,6 +231,7 @@ namespace Mirror
         {
             if (hasAuthority && clientAuthority)
                 return;
+            logger.Assert(HasAnimator, "HandleAnimMsg called before animator set");
 
             // usually transitions will be triggered by parameters, if not, play anims directly.
             // NOTE: this plays "animations", not transitions, so any transitions will be skipped.
@@ -201,6 +249,7 @@ namespace Mirror
         {
             if (hasAuthority && clientAuthority)
                 return;
+            logger.Assert(HasAnimator, "HandleAnimParamsMsg called before animator set");
 
             ReadParameters(reader);
         }
@@ -208,17 +257,27 @@ namespace Mirror
         void HandleAnimTriggerMsg(int hash)
         {
             if (animator.enabled)
+            {
+
+                logger.Assert(HasAnimator, "HandleAnimTriggerMsg called before animator set");
                 animator.SetTrigger(hash);
+            }
         }
 
         void HandleAnimResetTriggerMsg(int hash)
         {
             if (animator.enabled)
+            {
+
+                logger.Assert(HasAnimator, "HandleAnimResetTriggerMsg called before animator set");
                 animator.ResetTrigger(hash);
+            }
         }
 
         ulong NextDirtyBits()
         {
+            logger.Assert(HasAnimator, "NextDirtyBits called before animator set");
+
             ulong dirtyBits = 0;
             for (int i = 0; i < parameters.Length; i++)
             {
@@ -256,6 +315,8 @@ namespace Mirror
 
         bool WriteParameters(NetworkWriter writer, bool forceAll = false)
         {
+            logger.Assert(HasAnimator, "WriteParameters called before animator set");
+
             ulong dirtyBits = forceAll ? (~0ul) : NextDirtyBits();
             writer.WritePackedUInt64(dirtyBits);
             for (int i = 0; i < parameters.Length; i++)
@@ -285,6 +346,8 @@ namespace Mirror
 
         void ReadParameters(NetworkReader reader)
         {
+            logger.Assert(HasAnimator, "ReadParameters called before animator set");
+
             bool animatorEnabled = animator.enabled;
             // need to read values from NetworkReader even if animator is disabled
 
@@ -313,57 +376,6 @@ namespace Mirror
                     if (animatorEnabled)
                         animator.SetBool(par.nameHash, newBoolValue);
                 }
-            }
-        }
-
-        /// <summary>
-        /// Custom Serialization
-        /// </summary>
-        /// <param name="writer"></param>
-        /// <param name="initialState"></param>
-        /// <returns></returns>
-        public override bool OnSerialize(NetworkWriter writer, bool initialState)
-        {
-            if (initialState)
-            {
-                for (int i = 0; i < animator.layerCount; i++)
-                {
-                    if (animator.IsInTransition(i))
-                    {
-                        AnimatorStateInfo st = animator.GetNextAnimatorStateInfo(i);
-                        writer.WriteInt32(st.fullPathHash);
-                        writer.WriteSingle(st.normalizedTime);
-                    }
-                    else
-                    {
-                        AnimatorStateInfo st = animator.GetCurrentAnimatorStateInfo(i);
-                        writer.WriteInt32(st.fullPathHash);
-                        writer.WriteSingle(st.normalizedTime);
-                    }
-                }
-                WriteParameters(writer, initialState);
-                return true;
-            }
-            return false;
-        }
-
-        /// <summary>
-        /// Custom Deserialization
-        /// </summary>
-        /// <param name="reader"></param>
-        /// <param name="initialState"></param>
-        public override void OnDeserialize(NetworkReader reader, bool initialState)
-        {
-            if (initialState)
-            {
-                for (int i = 0; i < animator.layerCount; i++)
-                {
-                    int stateHash = reader.ReadInt32();
-                    float normalizedTime = reader.ReadSingle();
-                    animator.Play(stateHash, i, normalizedTime);
-                }
-
-                ReadParameters(reader);
             }
         }
 
@@ -468,7 +480,7 @@ namespace Mirror
             if (!clientAuthority)
                 return;
 
-            if (logger.LogEnabled()) logger.Log("OnAnimationMessage for netId=" + netId);
+            if (logger.LogEnabled()) logger.Log($"OnAnimationMessage for netId={netId}");
 
             // handle and broadcast
             using (PooledNetworkReader networkReader = NetworkReaderPool.GetReader(parameters))
@@ -553,6 +565,75 @@ namespace Mirror
             HandleAnimResetTriggerMsg(hash);
         }
 
+        #endregion
+
+        #region intial setup
+        [Server]
+        void SendSetupMessage()
+        {
+            // mark ready on server
+            hasSetup = true;
+
+            using (PooledNetworkWriter writer = NetworkWriterPool.GetWriter())
+            {
+                for (int i = 0; i < animator.layerCount; i++)
+                {
+                    if (animator.IsInTransition(i))
+                    {
+                        AnimatorStateInfo st = animator.GetNextAnimatorStateInfo(i);
+                        writer.WriteInt32(st.fullPathHash);
+                        writer.WriteSingle(st.normalizedTime);
+                    }
+                    else
+                    {
+                        AnimatorStateInfo st = animator.GetCurrentAnimatorStateInfo(i);
+                        writer.WriteInt32(st.fullPathHash);
+                        writer.WriteSingle(st.normalizedTime);
+                    }
+                }
+                WriteParameters(writer, true);
+
+                ArraySegment<byte> bytes = writer.ToArraySegment();
+                RpcOnAnimatorSetClientMessage(bytes);
+            }
+        }
+
+        [ClientRpc]
+        void RpcOnAnimatorSetClientMessage(ArraySegment<byte> setupByte)
+        {
+            // host players doesnt need to be setup
+            if (isServer) { return; }
+
+            logger.Assert(!hasSetup, "Setup should not be called mutliple times");
+            // if animator has been set, handle the message right way
+            // else wait for animator to be set and handle the message in setup
+            if (HasAnimator)
+            {
+                HandleAnimSetMsgBytes(setupByte);
+            }
+            else
+            {
+                setupMsg = setupByte.ToArray();
+            }
+        }
+
+        void HandleAnimSetMsgBytes(ArraySegment<byte> parameters)
+        {
+            using (PooledNetworkReader reader = NetworkReaderPool.GetReader(parameters))
+            {
+                logger.Assert(HasAnimator, "HandleAnimSetMsg called before animator set");
+                for (int i = 0; i < animator.layerCount; i++)
+                {
+                    int stateHash = reader.ReadInt32();
+                    float normalizedTime = reader.ReadSingle();
+                    animator.Play(stateHash, i, normalizedTime);
+                }
+
+                ReadParameters(reader);
+
+                hasSetup = true;
+            }
+        }
         #endregion
     }
 }
