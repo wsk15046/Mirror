@@ -133,7 +133,7 @@ namespace Mirror.Websocket
                 WebSocketHttpContext context = await webSocketServerFactory.ReadHttpHeaderFromStreamAsync(tcpClient, stream, token);
                 if (context.IsWebSocketRequest)
                 {
-                    KeepAliveTimer == 0 ? TimeSpan.Zero : TimeSpan.FromSeconds(KeepAliveTimer);
+                    KeepAliveTimer = TimeSpan.FromSeconds(KeepAliveTimer);
                     
                     WebSocketServerOptions options = new WebSocketServerOptions() { KeepAliveInterval = KeepAliveTimer, SubProtocol = "binary" };
 
