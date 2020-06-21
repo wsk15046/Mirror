@@ -258,7 +258,6 @@ namespace Mirror
         {
             if (animator.enabled)
             {
-
                 logger.Assert(HasAnimator, "HandleAnimTriggerMsg called before animator set");
                 animator.SetTrigger(hash);
             }
@@ -268,7 +267,6 @@ namespace Mirror
         {
             if (animator.enabled)
             {
-
                 logger.Assert(HasAnimator, "HandleAnimResetTriggerMsg called before animator set");
                 animator.ResetTrigger(hash);
             }
