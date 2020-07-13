@@ -740,6 +740,12 @@ namespace Mirror
         public virtual void OnStartLocalPlayer() { }
 
         /// <summary>
+        /// Called when the local player object has been destroyed or changed to another object
+        /// <para>This happens **** OnStopClient(), as it is triggered by an ownership message from the server. This is an appropriate place to deactivate components or functionality that should only be active for the local player, such as cameras and input.</para>
+        /// </summary>
+        public virtual void OnStopLocalPlayer() { }
+
+        /// <summary>
         /// This is invoked on behaviours that have authority, based on context and <see cref="NetworkIdentity.hasAuthority">NetworkIdentity.hasAuthority</see>.
         /// <para>This is called after <see cref="OnStartServer">OnStartServer</see> and before <see cref="OnStartClient">OnStartClient.</see></para>
         /// <para>When <see cref="NetworkIdentity.AssignClientAuthority">AssignClientAuthority</see> is called on the server, this will be called on the client that owns the object. When an object is spawned with <see cref="NetworkServer.Spawn">NetworkServer.Spawn</see> with a NetworkConnection parameter included, this will be called on the client that owns the object.</para>

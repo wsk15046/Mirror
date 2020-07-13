@@ -657,6 +657,7 @@ namespace Mirror
         static NetworkIdentity previousLocalPlayer = null;
         internal void OnStartLocalPlayer()
         {
+            // only run if not already the local player
             if (previousLocalPlayer == this)
                 return;
             previousLocalPlayer = this;
@@ -671,6 +672,31 @@ namespace Mirror
                 try
                 {
                     comp.OnStartLocalPlayer();
+                }
+                catch (Exception e)
+                {
+                    logger.LogError("Exception in OnStartLocalPlayer:" + e.Message + " " + e.StackTrace);
+                }
+            }
+        }
+
+        internal void OnStopLocalPlayer()
+        {
+            // only run if this is the local player
+            if (previousLocalPlayer != this)
+                return;
+            previousLocalPlayer = null;
+
+            foreach (NetworkBehaviour comp in NetworkBehaviours)
+            {
+                // an exception in OnStartLocalPlayer should be caught, so that
+                // one component's exception doesn't stop all other components
+                // from being initialized
+                // => this is what Unity does for Start() etc. too.
+                //    one exception doesn't stop all the other Start() calls!
+                try
+                {
+                    comp.OnStopLocalPlayer();
                 }
                 catch (Exception e)
                 {
