@@ -2,7 +2,15 @@
 
 Authority is a way of deciding who owns an object and has control over it. 
 
+
+## How to give authority
+
 By default the server has Authority over all objects. The server can give authority to objects that a client needs to control, like the player object. 
+
+If you spawn a player object using `NetworkServer.AddPlayerForConnection` then it will automatically be given authority.
+
+
+
 
 ## Server Authority
 
