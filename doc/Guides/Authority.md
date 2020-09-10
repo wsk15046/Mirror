@@ -1,6 +1,8 @@
 # Network Authority
 
-Servers and clients can both manage a game object’s behavior. The concept of “authority” refers to how and where a game object is managed.
+Authority is a way of deciding who owns an object and has control over it. 
+
+By default the server has Authority over all objects. The server can give authority to objects that a client needs to control, like the player object. 
 
 ## Server Authority
 
