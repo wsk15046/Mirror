@@ -62,3 +62,12 @@ The `NetworkBehaviour` class contains properties that allow scripts to know what
 On the server, the `NetworkIdentity` holds the owning client in `connectionToClient`.
 
 To see these properties, select the game object you want to inspect, and in the Inspector window, view the preview window for the NetworkBehaviour scripting components. You can use the value of these properties to execute code based on the context in which the script is running.
+
+
+
+# Summary 
+
+- Authority is a way of deciding who owns an object and has control over it. 
+- To check authority:
+    - On Client, Use `hasAuthority`
+    - On Server, Use `connectionToClient` (null means server has authority)
