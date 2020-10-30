@@ -202,6 +202,7 @@ namespace Mirror
         /// <typeparam name="T">The message type to unregister.</typeparam>
         /// <param name="msg">The message object to process.</param>
         /// <returns>Returns true if the handler was successfully invoked</returns>
+        // todo can we remove this function? does anyone need to invoke a message handler locally
         public bool InvokeHandler<T>(T msg, int channelId) where T : NetworkMessage
         {
             using (PooledNetworkWriter writer = NetworkWriterPool.GetWriter())

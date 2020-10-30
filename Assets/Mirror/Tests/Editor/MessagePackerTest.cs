@@ -32,16 +32,19 @@ namespace Mirror.Tests
             Assert.That(unpacked.sceneOperation, Is.EqualTo(SceneOperation.LoadAdditive));
         }
 
+        struct Message1 : NetworkMessage { }
+        struct Message2 : NetworkMessage { }
+
         [Test]
         public void UnpackWrongMessage()
         {
-            ConnectMessage message = new ConnectMessage();
+            Message1 message = new Message1();
 
             byte[] data = PackToByteArray(message);
 
             Assert.Throws<FormatException>(() =>
             {
-                DisconnectMessage unpacked = MessagePacker.Unpack<DisconnectMessage>(data);
+                Message2 unpacked = MessagePacker.Unpack<Message2>(data);
             });
         }
 
