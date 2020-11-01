@@ -37,6 +37,12 @@ namespace Mirror.Cloud.ListServerService
         public string customAddress;
 
         /// <summary>
+        /// Set this to show that the server needs a password in order to join. Should be used with ServerCodeAuthenticator or similar Authenticator
+        /// <para>optional</para>
+        /// </summary>
+        public bool needsPassword;
+
+        /// <summary>
         /// Array of custom data, use SetCustomData to set values
         /// <para>optional</para>
         /// </summary>
