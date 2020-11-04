@@ -4,10 +4,26 @@
 
 Mirror uses semantic versioning, and the versions shown here are those that were published to the Asset Store, and occasionally major version bumps happen mid-month between store submissions and are therefore not individually shown here.
 
-## Version 25.x.x -- In Progress
-- Added: Middleware Transport
-- Fixed: Authenticators and assemblies with only messages and no Behaviors weaver failure
+## Version 26.x.x -- In Progress
+- Added: [KCP Transport](../Transports/KCPTransport.md)
+- Added: [Libuv2k Transport](../Transports/Libuv2k.md)
+- Added: Quaternion and float compression
+- Added: Option to configure handshakeMaxSize in SimpleWebTransport
+- Added: ServerTeleport to Experimental NetworkTransform
+- Added: Accept and Reject methods to Authenticator base class for ease of use
+- Fixed: Weaver failure on Authenticators and assemblies with only messages and no behaviors
+- Fixed: Examples no longer rely on sequential connectionId
+- Fixed: Eliminated errors when first importing due to preprocessor defines in transports
+- Fixed: Scene ID logging is now consistantly in hex format
+- Fixed: sceneId when using BuildPipeline.BuildPlayer with incorrect case in path
+- Fixed: Trigger not applied correctly for host in NetworkAnimator
+- Fixed: Ensure ReadHelper.Read reads exactly number of bytes in SimpleWebTransport
+- Changed: Minimum Unity version is now 2018.4.28 LTS
+- Changed: Script Templates are now avalable as a separate package [here](ScriptTemplates.md)
+- Changed: Telepathy Transport is now obsolete - Use [KCP Transport](../Transports/KCPTransport.md) instead.
+- Changed: **Breaking** NetworkIdentity.ClientAuthorityCallback is an event now
 - Changed: **Breaking** Removed older obsolete methods and tests
+- Changed: **Breaking** Transports no longer support sending to a List<int> of connectionIds
 
 ## Version 23.0.3 -- 2020-Oct-24
 - Added: Support null when serializing classes 
@@ -46,8 +62,8 @@ Mirror uses semantic versioning, and the versions shown here are those that were
 - Fixed: Weaver now correctly gives error when generating a reader methods for abstract classes
 - Changed: NetworkServer no longer runs update if there are no connections
 - Changed: NetworkBehaviour.IsDirty is now a public
-- Changed: SyncEvent are now Obsolete and will be removed in the next version
-- Removed: isHeadless is now Obsolete, Use preprocessor directive `#if UNITY_SERVER` instead
+- Changed: SyncEvent are now obsolete and will be removed in the next version
+- Removed: isHeadless is now obsolete, Use preprocessor directive `#if UNITY_SERVER` instead
 
 ## Version 16.9.0 -- 2020-Aug-01
 - Added: [NetworkHeadlessLogger](../Components/NetworkHeadlessLogger.md) log handler that sets console color
