@@ -202,22 +202,11 @@ namespace Mirror
         /// <typeparam name="T">The message type to unregister.</typeparam>
         /// <param name="msg">The message object to process.</param>
         /// <returns>Returns true if the handler was successfully invoked</returns>
-        // todo can we remove this function? does anyone need to invoke a message handler locally
+        [Obsolete("InvokeHandler is only used to invoke messages locally, instead call the methods directly. see https://github.com/vis2k/Mirror/pull/2397", true)]
         public bool InvokeHandler<T>(T msg, int channelId) where T : NetworkMessage
         {
-            using (PooledNetworkWriter writer = NetworkWriterPool.GetWriter())
-            {
-                // if it is a value type,  just use typeof(T) to avoid boxing
-                // this works because value types cannot be derived
-                // if it is a reference type (for example NetworkMessage),
-                // ask the message for the real type
-                int msgType = MessagePacker.GetId(default(T) != null ? typeof(T) : msg.GetType());
-
-                MessagePacker.Pack(msg, writer);
-                ArraySegment<byte> segment = writer.ToArraySegment();
-                using (PooledNetworkReader networkReader = NetworkReaderPool.GetReader(segment))
-                    return InvokeHandler(msgType, networkReader, channelId);
-            }
+            // todo remove this in 3 months, Obsoleted 2020-11-07
+            return false;
         }
 
         // note: original HLAPI HandleBytes function handled >1 message in a while loop, but this wasn't necessary
