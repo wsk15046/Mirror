@@ -744,8 +744,8 @@ namespace Mirror
 
         void RegisterServerMessages()
         {
-            NetworkServer.OnConnectedEvent += OnServerConnectInternal;
-            NetworkServer.OnDisconnectEvent += OnServerDisconnectInternal;
+            NetworkServer.OnConnected += OnServerConnectInternal;
+            NetworkServer.OnDisconnected += OnServerDisconnectInternal;
             NetworkServer.RegisterHandler<AddPlayerMessage>(OnServerAddPlayerInternal);
             NetworkServer.RegisterHandler<ErrorMessage>(OnServerErrorInternal, false);
 
@@ -755,8 +755,8 @@ namespace Mirror
 
         void RegisterClientMessages()
         {
-            NetworkClient.OnConnectedEvent += OnClientConnectInternal;
-            NetworkClient.OnDisconnectEvent += OnClientDisconnectInternal;
+            NetworkClient.OnConnected += OnClientConnectInternal;
+            NetworkClient.OnDisconnected += OnClientDisconnectInternal;
             NetworkClient.RegisterHandler<NotReadyMessage>(OnClientNotReadyMessageInternal);
             NetworkClient.RegisterHandler<ErrorMessage>(OnClientErrorInternal, false);
             NetworkClient.RegisterHandler<SceneMessage>(OnClientSceneInternal, false);

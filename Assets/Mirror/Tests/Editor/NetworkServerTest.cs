@@ -142,7 +142,7 @@ namespace Mirror.Tests
         {
             // message handlers
             bool connectCalled = false;
-            NetworkServer.OnConnectedEvent += (conn) => { connectCalled = true; };
+            NetworkServer.OnConnected += (conn) => { connectCalled = true; };
             NetworkServer.RegisterHandler<ErrorMessage>((conn, msg) => { }, false);
 
             // listen
@@ -159,7 +159,7 @@ namespace Mirror.Tests
         {
             // message handlers
             bool disconnectCalled = false;
-            NetworkServer.OnDisconnectEvent += (conn) => { disconnectCalled = true; };
+            NetworkServer.OnDisconnected += (conn) => { disconnectCalled = true; };
             NetworkServer.RegisterHandler<ErrorMessage>((conn, msg) => { }, false);
 
             // listen

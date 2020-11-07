@@ -75,11 +75,12 @@ namespace Mirror
         /// <summary>
         /// Called after new connection is set up on server
         /// </summary>
-        public static event ConnectionEvent OnConnectedEvent;
+        public static event ConnectionEvent OnConnected;
+
         /// <summary>
         /// Called after connection disconnects from server
         /// </summary>
-        public static event ConnectionEvent OnDisconnectEvent;
+        public static event ConnectionEvent OnDisconnected;
 
         /// <summary>
         /// This shuts down the server and disconnects all clients.
@@ -99,8 +100,8 @@ namespace Mirror
                     Transport.activeTransport.ServerStop();
                 }
 
-                Transport.activeTransport.OnServerDisconnected.RemoveListener(OnDisconnected);
-                Transport.activeTransport.OnServerConnected.RemoveListener(OnConnected);
+                Transport.activeTransport.OnServerDisconnected.RemoveListener(OnDisconnectedInternal);
+                Transport.activeTransport.OnServerConnected.RemoveListener(OnConnectedInternal);
                 Transport.activeTransport.OnServerDataReceived.RemoveListener(OnDataReceived);
                 Transport.activeTransport.OnServerError.RemoveListener(OnError);
 
@@ -147,8 +148,8 @@ namespace Mirror
             connections.Clear();
 
             logger.Assert(Transport.activeTransport != null, "There was no active transport when calling NetworkServer.Listen, If you are calling Listen manually then make sure to set 'Transport.activeTransport' first");
-            Transport.activeTransport.OnServerDisconnected.AddListener(OnDisconnected);
-            Transport.activeTransport.OnServerConnected.AddListener(OnConnected);
+            Transport.activeTransport.OnServerDisconnected.AddListener(OnDisconnectedInternal);
+            Transport.activeTransport.OnServerConnected.AddListener(OnConnectedInternal);
             Transport.activeTransport.OnServerDataReceived.AddListener(OnDataReceived);
             Transport.activeTransport.OnServerError.AddListener(OnError);
         }
@@ -499,7 +500,7 @@ namespace Mirror
             }
         }
 
-        static void OnConnected(int connectionId)
+        static void OnConnectedInternal(int connectionId)
         {
             if (logger.LogEnabled()) logger.Log("Server accepted client:" + connectionId);
 
@@ -538,16 +539,16 @@ namespace Mirror
             }
         }
 
-        internal static void OnConnected(NetworkConnectionToClient conn)
+        internal static void OnConnectedInternal(NetworkConnectionToClient conn)
         {
             if (logger.LogEnabled()) logger.Log("Server accepted client:" + conn);
 
             // add connection and invoke connected event
             AddConnection(conn);
-            OnConnectedEvent?.Invoke(conn);
+            OnConnected?.Invoke(conn);
         }
 
-        internal static void OnDisconnected(int connectionId)
+        internal static void OnDisconnectedInternal(int connectionId)
         {
             if (logger.LogEnabled()) logger.Log("Server disconnect client:" + connectionId);
 
@@ -557,14 +558,14 @@ namespace Mirror
                 RemoveConnection(connectionId);
                 if (logger.LogEnabled()) logger.Log("Server lost client:" + connectionId);
 
-                OnDisconnected(conn);
+                OnDisconnectedInternal(conn);
             }
         }
 
-        static void OnDisconnected(NetworkConnection conn)
+        static void OnDisconnectedInternal(NetworkConnection conn)
         {
             // todo change to event instead of message
-            OnDisconnectEvent?.Invoke(conn);
+            OnDisconnected?.Invoke(conn);
             if (logger.LogEnabled()) logger.Log("Server lost client:" + conn);
         }
 
