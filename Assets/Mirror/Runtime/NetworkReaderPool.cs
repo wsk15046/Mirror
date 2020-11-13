@@ -3,18 +3,72 @@ using UnityEngine;
 
 namespace Mirror
 {
+    public abstract class PooledNetworkReader : NetworkReader, IDisposable
+    {
+        internal PooledNetworkReader(byte[] bytes) : base(bytes) { }
+        internal PooledNetworkReader(ArraySegment<byte> segment) : base(segment) { }
+        public abstract void Dispose();
+    }
+
+    public static class NetworkReaderPool
+    {
+        public static bool useMaster;
+
+        public static int Capacity { get; internal set; }
+
+        /// <summary>
+        /// Get the next writer in the pool
+        /// <para>If pool is empty, creates a new Writer</para>
+        /// </summary>
+        public static PooledNetworkReader GetReader(byte[] bytes)
+        {
+            if (useMaster)
+            {
+                return NetworkReaderPoolMaster.GetReader(bytes);
+            }
+            else
+            {
+                return NetworkReaderPool_PR2414.GetReader(bytes);
+            }
+        }
+
+        public static PooledNetworkReader GetReader(ArraySegment<byte> bytes)
+        {
+            if (useMaster)
+            {
+                return NetworkReaderPoolMaster.GetReader(bytes);
+            }
+            else
+            {
+                return NetworkReaderPool_PR2414.GetReader(bytes);
+            }
+        }
+
+        internal static void Recycle(PooledNetworkReader a)
+        {
+            if (useMaster)
+            {
+                NetworkReaderPoolMaster.Recycle((PooledNetworkReaderMaster)a);
+            }
+            else
+            {
+                NetworkReaderPool_PR2414.Recycle((PooledNetworkReader_PR2414)a);
+            }
+        }
+    }
+
     /// <summary>
     /// NetworkReader to be used with <see cref="NetworkReaderPool">NetworkReaderPool</see>
     /// </summary>
-    public class PooledNetworkReader : NetworkReader, IDisposable
+    public class PooledNetworkReaderMaster : PooledNetworkReader
     {
-        internal PooledNetworkReader(byte[] bytes) : base(bytes) { }
+        internal PooledNetworkReaderMaster(byte[] bytes) : base(bytes) { }
 
-        internal PooledNetworkReader(ArraySegment<byte> segment) : base(segment) { }
+        internal PooledNetworkReaderMaster(ArraySegment<byte> segment) : base(segment) { }
 
-        public void Dispose()
+        public override void Dispose()
         {
-            NetworkReaderPool.Recycle(this);
+            NetworkReaderPoolMaster.Recycle(this);
         }
     }
 
@@ -23,9 +77,9 @@ namespace Mirror
     /// <para>Use this pool instead of <see cref="NetworkReader">NetworkReader</see> to reduce memory allocation</para>
     /// <para>Use <see cref="Capacity">Capacity</see> to change size of pool</para>
     /// </summary>
-    public static class NetworkReaderPool
+    public static class NetworkReaderPoolMaster
     {
-        static readonly ILogger logger = LogFactory.GetLogger(typeof(NetworkReaderPool), LogType.Error);
+        static readonly ILogger logger = LogFactory.GetLogger(typeof(NetworkReaderPoolMaster), LogType.Error);
 
         /// <summary>
         /// Size of the pool
@@ -58,7 +112,7 @@ namespace Mirror
         ///
         /// Note: we use an Array instead of a Stack because it's significantly
         ///       faster: https://github.com/vis2k/Mirror/issues/1614
-        static PooledNetworkReader[] pool = new PooledNetworkReader[100];
+        static PooledNetworkReaderMaster[] pool = new PooledNetworkReaderMaster[100];
 
         static int next = -1;
 
@@ -66,14 +120,14 @@ namespace Mirror
         /// Get the next reader in the pool
         /// <para>If pool is empty, creates a new Reader</para>
         /// </summary>
-        public static PooledNetworkReader GetReader(byte[] bytes)
+        public static PooledNetworkReaderMaster GetReader(byte[] bytes)
         {
             if (next == -1)
             {
-                return new PooledNetworkReader(bytes);
+                return new PooledNetworkReaderMaster(bytes);
             }
 
-            PooledNetworkReader reader = pool[next];
+            PooledNetworkReaderMaster reader = pool[next];
             pool[next] = null;
             next--;
 
@@ -86,14 +140,14 @@ namespace Mirror
         /// Get the next reader in the pool
         /// <para>If pool is empty, creates a new Reader</para>
         /// </summary>
-        public static PooledNetworkReader GetReader(ArraySegment<byte> segment)
+        public static PooledNetworkReaderMaster GetReader(ArraySegment<byte> segment)
         {
             if (next == -1)
             {
-                return new PooledNetworkReader(segment);
+                return new PooledNetworkReaderMaster(segment);
             }
 
-            PooledNetworkReader reader = pool[next];
+            PooledNetworkReaderMaster reader = pool[next];
             pool[next] = null;
             next--;
 
@@ -106,7 +160,7 @@ namespace Mirror
         /// Puts reader back into pool
         /// <para>When pool is full, the extra reader is left for the GC</para>
         /// </summary>
-        public static void Recycle(PooledNetworkReader reader)
+        public static void Recycle(PooledNetworkReaderMaster reader)
         {
             if (next < pool.Length - 1)
             {

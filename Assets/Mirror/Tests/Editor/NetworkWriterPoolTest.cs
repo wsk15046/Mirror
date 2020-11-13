@@ -10,13 +10,13 @@ namespace Mirror.Tests
         [SetUp]
         public void SetUp()
         {
-            defaultCapacity = NetworkWriterPool.Capacity;
+            defaultCapacity = NetworkWriterPoolMaster.Capacity;
         }
 
         [TearDown]
         public void TearDown()
         {
-            NetworkWriterPool.Capacity = defaultCapacity;
+            NetworkWriterPoolMaster.Capacity = defaultCapacity;
         }
 
         [Test]
@@ -38,7 +38,7 @@ namespace Mirror.Tests
         [Test]
         public void PoolCanGetMoreWritersThanPoolSize()
         {
-            NetworkWriterPool.Capacity = 5;
+            NetworkWriterPoolMaster.Capacity = 5;
 
             const int testWriterCount = 10;
             PooledNetworkWriter[] writers = new PooledNetworkWriter[testWriterCount];
@@ -55,7 +55,7 @@ namespace Mirror.Tests
         [Test]
         public void PoolReUsesWritersUpToSizeLimit()
         {
-            NetworkWriterPool.Capacity = 1;
+            NetworkWriterPoolMaster.Capacity = 1;
 
             // get 2 writers
             PooledNetworkWriter a = NetworkWriterPool.GetWriter();
@@ -81,7 +81,7 @@ namespace Mirror.Tests
         [Test]
         public void ShrinkCapacity()
         {
-            NetworkWriterPool.Capacity = 2;
+            NetworkWriterPoolMaster.Capacity = 2;
 
             // get writer and recycle so we have 2 in there, hence 'next' is at limit
             PooledNetworkWriter a = NetworkWriterPool.GetWriter();
@@ -90,7 +90,7 @@ namespace Mirror.Tests
             NetworkWriterPool.Recycle(b);
 
             // shrink
-            NetworkWriterPool.Capacity = 1;
+            NetworkWriterPoolMaster.Capacity = 1;
 
             // get one. should return the only one which is still in there.
             PooledNetworkWriter c = NetworkWriterPool.GetWriter();
@@ -102,14 +102,14 @@ namespace Mirror.Tests
         [Test]
         public void GrowCapacity()
         {
-            NetworkWriterPool.Capacity = 1;
+            NetworkWriterPoolMaster.Capacity = 1;
 
             // create and recycle one
             PooledNetworkWriter a = NetworkWriterPool.GetWriter();
             NetworkWriterPool.Recycle(a);
 
             // grow capacity
-            NetworkWriterPool.Capacity = 2;
+            NetworkWriterPoolMaster.Capacity = 2;
 
             // get two
             PooledNetworkWriter b = NetworkWriterPool.GetWriter();

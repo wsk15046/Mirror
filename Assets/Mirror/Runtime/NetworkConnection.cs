@@ -91,7 +91,7 @@ namespace Mirror
         /// Creates a new NetworkConnection with the specified connectionId
         /// </summary>
         /// <param name="networkConnectionId"></param>
-        internal NetworkConnection(int networkConnectionId) : this()
+        public NetworkConnection(int networkConnectionId) : this()
         {
             connectionId = networkConnectionId;
         }
@@ -150,7 +150,7 @@ namespace Mirror
 
         // internal because no one except Mirror should send bytes directly to
         // the client. they would be detected as a message. send messages instead.
-        internal abstract void Send(ArraySegment<byte> segment, int channelId = Channels.DefaultReliable);
+        public abstract void Send(ArraySegment<byte> segment, int channelId = Channels.DefaultReliable);
 
         public override string ToString()
         {

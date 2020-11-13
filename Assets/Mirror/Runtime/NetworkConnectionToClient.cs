@@ -11,7 +11,7 @@ namespace Mirror
 
         public override string address => Transport.activeTransport.ServerGetClientAddress(connectionId);
 
-        internal override void Send(ArraySegment<byte> segment, int channelId = Channels.DefaultReliable)
+        public override void Send(ArraySegment<byte> segment, int channelId = Channels.DefaultReliable)
         {
             if (logger.LogEnabled()) logger.Log("ConnectionSend " + this + " bytes:" + BitConverter.ToString(segment.Array, segment.Offset, segment.Count));
 

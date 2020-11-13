@@ -13,7 +13,7 @@ namespace Mirror
 
         public override string address => "localhost";
 
-        internal override void Send(ArraySegment<byte> segment, int channelId = Channels.DefaultReliable)
+        public override void Send(ArraySegment<byte> segment, int channelId = Channels.DefaultReliable)
         {
             connectionToServer.buffer.Write(segment);
         }
@@ -87,7 +87,7 @@ namespace Mirror
 
         public override string address => "localhost";
 
-        internal override void Send(ArraySegment<byte> segment, int channelId = Channels.DefaultReliable)
+        public override void Send(ArraySegment<byte> segment, int channelId = Channels.DefaultReliable)
         {
             if (segment.Count == 0)
             {

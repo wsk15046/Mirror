@@ -3,25 +3,64 @@ using UnityEngine;
 
 namespace Mirror
 {
-    /// <summary>
-    /// NetworkWriter to be used with <see cref="NetworkWriterPool">NetworkWriterPool</see>
-    /// </summary>
-    public class PooledNetworkWriter : NetworkWriter, IDisposable
+    public abstract class PooledNetworkWriter : NetworkWriter, IDisposable
     {
-        public void Dispose()
+        public abstract void Dispose();
+    }
+
+    public static class NetworkWriterPool
+    {
+        public static bool useMaster;
+
+        /// <summary>
+        /// Get the next writer in the pool
+        /// <para>If pool is empty, creates a new Writer</para>
+        /// </summary>
+        public static PooledNetworkWriter GetWriter()
         {
-            NetworkWriterPool.Recycle(this);
+            if (useMaster)
+            {
+                return NetworkWriterPoolMaster.GetWriter();
+            }
+            else
+            {
+                return NetworkWriterPool_PR2414.GetWriter();
+            }
+        }
+
+        internal static void Recycle(PooledNetworkWriter a)
+        {
+            if (useMaster)
+            {
+                NetworkWriterPoolMaster.Recycle((PooledNetworkWriterMaster)a);
+            }
+            else
+            {
+                NetworkWriterPool_PR2414.Recycle((PooledNetworkWriter_PR2414)a);
+            }
         }
     }
+
+
+    /// NetworkWriter to be used with <see cref="NetworkWriterPool">NetworkWriterPool</see>
+    /// </summary>
+    public sealed class PooledNetworkWriterMaster : PooledNetworkWriter
+    {
+        public sealed override void Dispose()
+        {
+            NetworkWriterPoolMaster.Recycle(this);
+        }
+    }
+
 
     /// <summary>
     /// Pool of NetworkWriters
     /// <para>Use this pool instead of <see cref="NetworkWriter">NetworkWriter</see> to reduce memory allocation</para>
     /// <para>Use <see cref="Capacity">Capacity</see> to change size of pool</para>
     /// </summary>
-    public static class NetworkWriterPool
+    public static class NetworkWriterPoolMaster
     {
-        static readonly ILogger logger = LogFactory.GetLogger(typeof(NetworkWriterPool), LogType.Error);
+        static readonly ILogger logger = LogFactory.GetLogger(typeof(NetworkWriterPoolMaster), LogType.Error);
 
         /// <summary>
         /// Size of the pool
@@ -54,7 +93,7 @@ namespace Mirror
         ///
         /// Note: we use an Array instead of a Stack because it's significantly
         ///       faster: https://github.com/vis2k/Mirror/issues/1614
-        static PooledNetworkWriter[] pool = new PooledNetworkWriter[100];
+        static PooledNetworkWriterMaster[] pool = new PooledNetworkWriterMaster[100];
 
         static int next = -1;
 
@@ -62,14 +101,14 @@ namespace Mirror
         /// Get the next writer in the pool
         /// <para>If pool is empty, creates a new Writer</para>
         /// </summary>
-        public static PooledNetworkWriter GetWriter()
+        public static PooledNetworkWriterMaster GetWriter()
         {
             if (next == -1)
             {
-                return new PooledNetworkWriter();
+                return new PooledNetworkWriterMaster();
             }
 
-            PooledNetworkWriter writer = pool[next];
+            PooledNetworkWriterMaster writer = pool[next];
             pool[next] = null;
             next--;
 
@@ -78,11 +117,13 @@ namespace Mirror
             return writer;
         }
 
+
+
         /// <summary>
         /// Puts writer back into pool
         /// <para>When pool is full, the extra writer is left for the GC</para>
         /// </summary>
-        public static void Recycle(PooledNetworkWriter writer)
+        public static void Recycle(PooledNetworkWriterMaster writer)
         {
             if (next < pool.Length - 1)
             {
