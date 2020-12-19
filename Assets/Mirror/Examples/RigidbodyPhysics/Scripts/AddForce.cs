@@ -8,7 +8,7 @@ namespace Mirror.Examples.RigidbodyPhysics
 
         void Update()
         {
-            if (isServer)
+            if (true)
             {
                 if (Input.GetKeyDown(KeyCode.Space))
                 {
